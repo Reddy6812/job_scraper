@@ -2,51 +2,77 @@ import re
 from collections import Counter
 import spacy
 
-# Predefined skill list (expandable)
+# Predefined list of common technical skills (expand as needed)
 COMMON_SKILLS = [
-    'python', 'java', 'c++', 'c#', 'javascript', 'sql', 'aws', 'azure', 'gcp',
-    'react', 'node', 'html', 'css', 'django', 'flask', 'machine learning',
-    'data analysis', 'excel', 'linux', 'git', 'docker', 'kubernetes', 'communication',
-    'teamwork', 'problem solving', 'project management'
+    'graphql', 'next.js', 'typescript', 'react', 'angular', 'vue.js', 'node.js', 'express',
+    'django', 'flask', 'python', 'java', 'c++', 'c#', 'javascript', 'sql', 'aws', 'azure', 'gcp',
+    'docker', 'kubernetes', 'html', 'css', 'sass', 'less', 'webpack', 'babel', 'mongodb', 'postgresql',
+    'redis', 'firebase'
 ]
 
-# Load spaCy English model (make sure you have run: python -m spacy download en_core_web_sm)
+# Load spaCy English model (ensure you have run: python -m spacy download en_core_web_sm)
 nlp = spacy.load("en_core_web_sm")
+
+def is_valid_skill(chunk_text):
+    """
+    Determines whether a noun chunk is a valid technical skill.
+    Filters out common non-skill phrases and those that are too generic.
+    """
+    chunk_text = chunk_text.strip()
+    if not chunk_text:
+        return False
+    # Reject if more than 3 words (likely not a concise tech term)
+    if len(chunk_text.split()) > 3:
+        return False
+    # Blacklist unwanted phrases (all lower-case for comparison)
+    blacklist = {
+        "mountain view", "computer science", "ml accelerator", "computer engineering",
+        "google glassdoor", "2 days ago", "bachelor's degree", "minimum qualifications",
+        "job description", "work experience", "years of experience"
+    }
+    if chunk_text.lower() in blacklist:
+        return False
+    # Known technical skills list (from predefined skills)
+    known_tech_skills = set(COMMON_SKILLS)
+    if chunk_text.lower() in known_tech_skills:
+        return True
+    # Accept if the chunk contains at least one uppercase letter (indicating a proper noun)
+    if any(char.isupper() for char in chunk_text):
+        return True
+    # Also accept if it contains common technical symbols such as '.' or '+' or '#'
+    if '.' in chunk_text or '+' in chunk_text or '#' in chunk_text:
+        return True
+    return False
 
 def extract_skills(text):
     """
-    Extracts and counts occurrences of skills.
-    Combines a predefined list extraction with dynamic detection via NLP.
+    Extracts and counts technical skills from the provided text.
+    Combines extraction from a predefined list with dynamic extraction via spaCy NLP.
+    Only includes items that pass the technical skill filter.
     """
     text_lower = text.lower()
+    total_counts = Counter()
 
-    # Extract predefined skills using regex matching
-    predefined_counts = Counter()
+    # Predefined extraction: count occurrences of each known technical skill.
     for skill in COMMON_SKILLS:
         pattern = r'\b' + re.escape(skill) + r'\b'
         matches = re.findall(pattern, text_lower)
         if matches:
-            predefined_counts[skill] = len(matches)
+            total_counts[skill] += len(matches)
 
-    # Dynamic detection: use spaCy to extract noun chunks
-    dynamic_counts = Counter()
+    # Dynamic extraction using spaCy to detect potential tech skills via noun chunks.
     doc = nlp(text)
     for chunk in doc.noun_chunks:
-        # Lowercase, trimmed text of the noun chunk.
-        chunk_text = chunk.text.strip().lower()
-        # Skip if already counted as a predefined skill or too short (less than two words)
-        if chunk_text in predefined_counts or len(chunk_text.split()) < 2:
+        chunk_text = chunk.text.strip()
+        if not is_valid_skill(chunk_text):
             continue
-        # Heuristic filter: ignore common non-skill phrases (you can expand this list)
-        common_exclusions = {"job description", "work experience", "project management", "years of experience"}
-        if chunk_text in common_exclusions:
+        # If already counted from the predefined list (case-insensitive), skip it.
+        if chunk_text.lower() in total_counts:
             continue
-        # Count how many times this noun chunk appears in the text.
-        count = text_lower.count(chunk_text)
-        if count > 1:  # only include if mentioned more than once
-            dynamic_counts[chunk_text] += count
+        # Count occurrences in the text (case-insensitive)
+        count = len(re.findall(re.escape(chunk_text), text, flags=re.IGNORECASE))
+        if count > 0:
+            total_counts[chunk_text] = count
 
-    # Combine both counters. (Dynamic detections add additional skills not in the predefined list.)
-    total_counts = predefined_counts + dynamic_counts
-    # Return a sorted list of (skill, count) tuples in descending order of frequency.
+    # Return skills sorted by frequency in descending order.
     return sorted(total_counts.items(), key=lambda x: x[1], reverse=True)

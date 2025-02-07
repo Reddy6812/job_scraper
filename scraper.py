@@ -10,7 +10,7 @@ def get_job_description(url):
     soup = BeautifulSoup(response.content, 'html.parser')
     job_desc = ""
 
-    # Try a set of common selectors found on job pages
+    # Try common selectors often used in job portals
     selectors = [
         'div.job-description',
         'div.description',
@@ -23,11 +23,11 @@ def get_job_description(url):
         element = soup.select_one(selector)
         if element:
             job_desc = element.get_text(separator=" ", strip=True)
-            # Heuristic: consider this valid if it has a reasonable word count.
+            # Consider valid if there are enough words
             if len(job_desc.split()) > 50:
                 return job_desc
 
-    # Fallback: extract text from all <p> and <div> tags.
+    # Fallback: extract text from all <p> and <div> tags
     paragraphs = soup.find_all(['p', 'div'])
     job_desc = " ".join([p.get_text(separator=" ", strip=True) for p in paragraphs])
     return job_desc

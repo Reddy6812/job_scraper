@@ -15,6 +15,7 @@
         </form>
     </div>
     <script>
+        // Basic client-side validation: ensure a file is selected before submission.
         document.querySelector("form").addEventListener("submit", function(e){
             const fileInput = document.getElementById("file");
             if(fileInput.files.length === 0){

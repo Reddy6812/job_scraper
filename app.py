@@ -8,7 +8,7 @@ from collections import Counter
 app = Flask(__name__)
 app.secret_key = "supersecretkey"  # For flash messages
 
-# Define upload and result directories; create them if needed.
+# Define upload and result directories; create them if they don't exist.
 UPLOAD_FOLDER = "uploads"
 RESULTS_FOLDER = "results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -27,13 +27,13 @@ def index():
         if file and file.filename.endswith(".csv"):
             file_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(file_path)
-            # Process CSV: scrape descriptions and extract skills
+            # Process CSV: scrape job descriptions and extract skills
             extracted_path, overall_path = process_csv(file_path)
             return render_template('results.html', extracted_path=extracted_path, overall_path=overall_path)
     return render_template('index.html')
 
 def process_csv(file_path):
-    """Reads CSV, scrapes job descriptions, extracts skills, and saves the reports."""
+    """Reads CSV, scrapes job descriptions, extracts skills, and saves two reports."""
     df = pd.read_csv(file_path)
     if 'URL' not in df.columns:
         raise Exception("CSV must contain a column named 'URL' with job description links.")
@@ -46,7 +46,6 @@ def process_csv(file_path):
         try:
             job_text = get_job_description(url)
             skills = extract_skills(job_text)
-            # Create a string summary: e.g. "python (3), docker (2)"
             skills_str = ", ".join([f"{skill} ({count})" for skill, count in skills])
             # Aggregate overall skill frequency
             for skill, count in skills:
@@ -60,7 +59,7 @@ def process_csv(file_path):
     extracted_skills_path = os.path.join(RESULTS_FOLDER, "extracted_skills.csv")
     results_df.to_csv(extracted_skills_path, index=False)
 
-    # Save overall skill frequency
+    # Save overall skill frequency report
     overall_skills_df = pd.DataFrame(overall_skill_counts.items(), columns=["Skill", "Frequency"])
     overall_skills_df = overall_skills_df.sort_values(by="Frequency", ascending=False)
     overall_path = os.path.join(RESULTS_FOLDER, "overall_skill_frequency.csv")
