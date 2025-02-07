@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Skills Extractor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload CSV with Job URLs</h1>
+        <form method="POST" action="/" enctype="multipart/form-data">
+            <label for="file">Select CSV File:</label>
+            <input type="file" id="file" name="file" accept=".csv">
+            <button type="submit">Extract Skills</button>
+        </form>
+    </div>
+    <script>
+        document.querySelector("form").addEventListener("submit", function(e){
+            const fileInput = document.getElementById("file");
+            if(fileInput.files.length === 0){
+                alert("Please select a CSV file to upload.");
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Job Skills Extraction Results</h1>
+        <p>Download the extracted results:</p>
+        <ul>
+            <li><a href="{{ extracted_path }}" download>Download Job-specific Skills (CSV)</a></li>
+            <li><a href="{{ overall_path }}" download>Download Overall Skill Frequency (CSV)</a></li>
+        </ul>
+        <a href="/">Upload another file</a>
+    </div>
+</body>
+</html>
